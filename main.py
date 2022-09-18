@@ -1,87 +1,98 @@
-##
+"""
 
+    """
+
+import json
 
 import pandas as pd
 from githubdata import GithubData
-from persiantools import characters
-from mirutil.df_utils import read_data_according_to_type as rdata
 
 
-allcod_rp_url = 'https://github.com/imahdimir/d-all-Codal-Letters'
-c2b_url = "https://github.com/imahdimir/d-CodalTicker-2-BaseTicker-map"
+class Params :
+    min_dur_sec = 3600
 
-tid2tic_rp_url = 'https://github.com/imahdimir/d-TSETMC_ID-2-Ticker-map'
+p = Params()
 
-t2b_rp_url = 'https://github.com/imahdimir/d-Ticker-2-BaseTicker-map'
-bt_rp_url = 'https://github.com/imahdimir/d-uniq-BaseTickers'
-stch_rp_url = 'https://github.com/imahdimir/d-Status-changes'
-wd_rp_url = 'https://github.com/imahdimir/d-TSE-Working-Days'
+class GDUrl :
+    with open('gdu.json' , 'r') as fi :
+        gj = json.load(fi)
 
-tran = 'TracingNo'
-codtic = 'CodalTicker'
-cname = 'CompanyName'
-ltrcod = 'LetterCode'
-title = 'Title'
-pjdt = 'PublishDateTime'
-isest = 'IsEstimate'
-tic = 'Ticker'
-tid = 'TSETMC_ID'
-btic = 'BaseTicker'
+    selff = gj['selff']
+    src = gj['src']
+    src0 = gj['src0']
+    src1 = gj['src1']
+
+gu = GDUrl()
+
+class ColName :
+    tn = 'TracingNo'
+    ctic = 'CodalTicker'
+    cname = 'CompanyName'
+    lc = 'LetterCode'
+    titl = 'Title'
+    pjdt = 'PublishDateTime'
+    isest = 'IsEstimate'
+    ftic = 'FirmTicker'
+    dur = 'Duration'
+
+c = ColName()
 
 def main() :
-  pass
+    pass
 
-  ##
+    ##
 
-  ac_rp = GithubData(allcod_rp_url)
-  ##
-  ac_rp.clone()
-  ##
-  adfp = ac_rp.data_filepath
-  adf = pd.read_parquet(adfp)
-  ##
-  c2k = {
-      tran   : None ,
-      codtic : None ,
-      cname  : None ,
-      ltrcod : None ,
-      title  : None ,
-      pjdt   : None ,
-      isest  : None ,
-      }
+    gd_src = GithubData(gu.src)
+    ##
+    ds = gd_src.read_data()
+    ##
+    c2k = {
+            c.tn   : None ,
+            c.ctic : None ,
+            c.pjdt : None ,
+            }
+    ds = ds[c2k.keys()]
 
-  adf = adf[c2k.keys()]
-  adfv = adf.head(100)
-  ##
-  rp_c2b = GithubData(c2b_url)
-  rp_c2b.clone()
-  ##
-  dc2bfp = rp_c2b.data_filepath
-  dc2b = rdata(dc2bfp)
-  dc2b = dc2b.reset_index()
-  ##
+    ##
+    msk = ds[c.tn].isna()
+    df1 = ds[msk]
+
+    ##
+    ds = ds.dropna(subset = [c.ctic])
+
+    ##
+
+    gd0 = GithubData(gu.src0)
+    ds0 = gd0.read_data()
+    ##
+    ds0 = ds0.set_index(c.ctic)
+    ##
+
+    ds[c.ftic] = ds[c.ctic].map(ds0[c.ftic])
+    ##
+    ds = ds.dropna(subset = [c.ftic])
+    ds = ds.drop(columns = [c.ctic])
+    ds = ds[[c.tn , c.ftic , c.pjdt]]
+
+    ##
+
+    gd1 = GithubData(gu.src1)
+    do = gd1.read_data()
+    ##
+    dov = do.head()
+    ##
+
+    msk = do[c.dur].ge(p.min_dur_sec)
+
+    df1 = do[~msk]
+    df2 = do[msk]
+
+    ##
 
 
-  ##
-
-
-  ##
-
-
-  ##
-
-
-  ##
-  stch_rp = GithubData(stch_rp_url)
-  stch_rp.clone()
-
-  ##
-  sdfp = stch_rp.data_filepath
-  sdf = pd.read_parquet(sdfp)
-
-  ##
-
+    ##
 
 ##
-
-##
+if __name__ == '__main__' :
+    main()
+    print('Done!')
